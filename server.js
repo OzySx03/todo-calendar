@@ -6,14 +6,18 @@ const bodyParser = require('body-parser');
 
 const app = express();
 const JWT_SECRET = 'your-secret-key';
-const PORT = 8080;
+const PORT = process.env.PORT || 8080;
 
 // In-memory storage
 let tasks = [];
 let users = [];
 
 // Basic middleware
-app.use(cors());
+app.use(cors({
+  origin: ['https://ozysx03.github.io', 'http://localhost:3000'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  credentials: true
+}));
 app.use(bodyParser.json());
 
 // Logging middleware
@@ -153,8 +157,8 @@ app.delete('/api/tasks/:id', authenticateToken, (req, res) => {
   res.json({ message: 'Task deleted' });
 });
 
-// Start server
+// Create HTTP server and start listening
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Server running at http://0.0.0.0:${PORT}`);
-  console.log('Access from other devices using your computer\'s IP address');
+  console.log(`Server is running on port ${PORT}`);
+  console.log('Environment:', process.env.NODE_ENV || 'development');
 }); 
