@@ -6,27 +6,43 @@ import { format } from 'date-fns';
 const getPriorityColor = (priority = 'medium') => {
   switch (priority.toLowerCase()) {
     case 'high':
-      return '#ef5350'; // red
+      return {
+        border: '#ef5350',
+        background: '#ffebee'
+      };
     case 'medium':
-      return '#ffa726'; // orange
+      return {
+        border: '#ffa726',
+        background: '#fff3e0'
+      };
     case 'low':
-      return '#66bb6a'; // green
+      return {
+        border: '#66bb6a',
+        background: '#e8f5e9'
+      };
     default:
-      return '#9e9e9e'; // grey
+      return {
+        border: '#9e9e9e',
+        background: '#f5f5f5'
+      };
   }
 };
 
 const Task = ({ task, onUpdate, onDelete }) => {
   const priority = task.priority || 'medium';
   const completed = task.completed || false;
+  const colors = getPriorityColor(priority);
 
   return (
     <Card 
       sx={{ 
         mb: 2,
-        borderLeft: `6px solid ${getPriorityColor(priority)}`,
+        borderLeft: `6px solid ${colors.border}`,
+        backgroundColor: colors.background,
+        transition: 'all 0.3s ease',
         '&:hover': {
-          boxShadow: 6
+          boxShadow: 6,
+          transform: 'translateY(-2px)'
         }
       }}
     >
@@ -47,9 +63,12 @@ const Task = ({ task, onUpdate, onDelete }) => {
                   label={priority.toUpperCase()} 
                   size="small"
                   sx={{ 
-                    backgroundColor: getPriorityColor(priority),
+                    backgroundColor: colors.border,
                     color: 'white',
-                    fontWeight: 'bold'
+                    fontWeight: 'bold',
+                    '&:hover': {
+                      backgroundColor: colors.border
+                    }
                   }}
                 />
                 <Chip 
@@ -58,7 +77,10 @@ const Task = ({ task, onUpdate, onDelete }) => {
                   sx={{ 
                     backgroundColor: completed ? '#4caf50' : '#ff9800',
                     color: 'white',
-                    fontWeight: 'bold'
+                    fontWeight: 'bold',
+                    '&:hover': {
+                      backgroundColor: completed ? '#43a047' : '#fb8c00'
+                    }
                   }}
                 />
               </Box>
