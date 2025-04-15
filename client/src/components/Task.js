@@ -50,11 +50,25 @@ const Task = ({ task, onUpdate, onDelete }) => {
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <Box sx={{ flex: 1 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
-              <Typography variant="h6" component="div">
+              <Typography 
+                variant="h6" 
+                component="div"
+                sx={{ 
+                  color: colors.border,
+                  fontWeight: 'bold'
+                }}
+              >
                 {task.title}
               </Typography>
             </Box>
-            <Typography variant="body2" color="text.secondary" gutterBottom>
+            <Typography 
+              variant="body2" 
+              sx={{ 
+                color: colors.border,
+                fontWeight: 'medium',
+                mb: 1
+              }}
+            >
               Due: {format(new Date(task.date), 'PPp')}
             </Typography>
             <Box sx={{ mt: 1, display: 'flex', alignItems: 'center', gap: 2 }}>
