@@ -18,26 +18,46 @@ const Auth = ({ onLogin }) => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
+  
+  // Ensure API_URL doesn't end with a slash
+  const API_URL = (process.env.REACT_APP_API_URL || 'http://localhost:5000').replace(/\/$/, '');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setLoading(true);
 
+    const axiosConfig = {
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    };
+
     try {
       const endpoint = tab === 'login' ? '/api/auth/login' : '/api/auth/register';
-      console.log('Making request to:', `${API_URL}${endpoint}`);
+      const fullUrl = `${API_URL}${endpoint}`;
+      console.log('Making request to:', fullUrl);
+      console.log('Using API URL:', API_URL);
       
-      const response = await axios.post(`${API_URL}${endpoint}`, {
+      // First try a health check
+      try {
+        const healthCheckUrl = `${API_URL}/health`;
+        console.log('Checking health at:', healthCheckUrl);
+        const healthCheck = await axios.get(healthCheckUrl, axiosConfig);
+        console.log('Health check response:', healthCheck.data);
+      } catch (healthError) {
+        console.error('Health check failed:', healthError);
+        if (healthError.response) {
+          console.error('Health check response:', healthError.response.data);
+          console.error('Health check status:', healthError.response.status);
+        }
+        throw new Error('Server is not responding. Please try again later.');
+      }
+      
+      const response = await axios.post(fullUrl, {
         username,
         password
-      }, {
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        withCredentials: true
-      });
+      }, axiosConfig);
 
       console.log('Response:', response.data);
 
