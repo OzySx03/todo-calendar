@@ -12,8 +12,19 @@ const USERS_FILE = path.join(__dirname, 'data', 'users.json');
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: ['http://localhost:3000', 'https://ozysx03.github.io'],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 app.use(bodyParser.json());
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error('Error:', err);
+  res.status(500).json({ message: 'Internal server error', error: err.message });
+});
 
 // Ensure data directory and files exist
 async function ensureDataFiles() {
@@ -103,7 +114,13 @@ ensureDataFiles().catch(console.error);
 // Auth Routes
 app.post('/api/auth/register', async (req, res) => {
   try {
+    console.log('Register request received:', req.body);
     const { username, password } = req.body;
+
+    if (!username || !password) {
+      return res.status(400).json({ message: 'Username and password are required' });
+    }
+
     const users = await readUsers();
 
     // Check if username already exists
@@ -127,16 +144,23 @@ app.post('/api/auth/register', async (req, res) => {
     // Generate token
     const token = jwt.sign({ id: newUser.id, username: newUser.username }, JWT_SECRET, { expiresIn: '24h' });
 
+    console.log('User registered successfully:', { username: newUser.username });
     res.status(201).json({ token, username });
   } catch (error) {
     console.error('Error registering user:', error);
-    res.status(500).json({ message: 'Error registering user' });
+    res.status(500).json({ message: 'Error registering user', error: error.message });
   }
 });
 
 app.post('/api/auth/login', async (req, res) => {
   try {
+    console.log('Login request received:', req.body);
     const { username, password } = req.body;
+
+    if (!username || !password) {
+      return res.status(400).json({ message: 'Username and password are required' });
+    }
+
     const users = await readUsers();
 
     // Find user
@@ -154,10 +178,11 @@ app.post('/api/auth/login', async (req, res) => {
     // Generate token
     const token = jwt.sign({ id: user.id, username: user.username }, JWT_SECRET, { expiresIn: '24h' });
 
+    console.log('User logged in successfully:', { username: user.username });
     res.json({ token, username });
   } catch (error) {
     console.error('Error logging in:', error);
-    res.status(500).json({ message: 'Error logging in' });
+    res.status(500).json({ message: 'Error logging in', error: error.message });
   }
 });
 
@@ -238,6 +263,11 @@ app.delete('/api/tasks/:id', authenticateToken, async (req, res) => {
     console.error('Error deleting task:', error);
     res.status(500).json({ message: error.message });
   }
+});
+
+// Health check route
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
 // Start server
