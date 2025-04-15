@@ -33,42 +33,45 @@ function App() {
   const [tasks, setTasks] = useState([]);
   const [openForm, setOpenForm] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
-  const [serverPort, setServerPort] = useState(5000);
   const [view, setView] = useState('list');
-  const [selectedDate, setSelectedDate] = useState(new Date());
-
-  useEffect(() => {
-    fetchTasks();
-  }, []);
+  const [selectedDate, setSelectedDate] = useState(null);
+  const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
 
   const fetchTasks = async () => {
     try {
-      const response = await axios.get(`http://localhost:${serverPort}/api/tasks`);
-      console.log('Fetched tasks:', response.data);
+      const response = await axios.get(`${API_URL}/tasks`);
       setTasks(response.data);
     } catch (error) {
       console.error('Error fetching tasks:', error);
     }
   };
 
-  const handleAddTask = async (taskData) => {
+  useEffect(() => {
+    fetchTasks();
+  }, []);
+
+  const handleAddTask = async (task) => {
     try {
-      console.log('Submitting task:', taskData);
-      if (taskData.id) {
-        await axios.put(`http://localhost:${serverPort}/api/tasks/${taskData.id}`, taskData);
-      } else {
-        await axios.post(`http://localhost:${serverPort}/api/tasks`, taskData);
-      }
-      await fetchTasks();
+      const response = await axios.post(`${API_URL}/tasks`, task);
+      setTasks([...tasks, response.data]);
     } catch (error) {
-      console.error('Error saving task:', error);
+      console.error('Error adding task:', error);
+    }
+  };
+
+  const handleUpdateTask = async (updatedTask) => {
+    try {
+      await axios.put(`${API_URL}/tasks/${updatedTask.id}`, updatedTask);
+      setTasks(tasks.map(task => task.id === updatedTask.id ? updatedTask : task));
+    } catch (error) {
+      console.error('Error updating task:', error);
     }
   };
 
   const handleDeleteTask = async (taskId) => {
     try {
-      await axios.delete(`http://localhost:${serverPort}/api/tasks/${taskId}`);
-      await fetchTasks();
+      await axios.delete(`${API_URL}/tasks/${taskId}`);
+      setTasks(tasks.filter(task => task.id !== taskId));
     } catch (error) {
       console.error('Error deleting task:', error);
     }
@@ -77,7 +80,7 @@ function App() {
   const handleToggleTask = async (taskId) => {
     try {
       const task = tasks.find(t => t.id === taskId);
-      await axios.put(`http://localhost:${serverPort}/api/tasks/${taskId}`, {
+      await axios.put(`${API_URL}/tasks/${taskId}`, {
         ...task,
         completed: !task.completed
       });
@@ -97,7 +100,7 @@ function App() {
     setView('list');
   };
 
-  const filteredTasks = view === 'list' && selectedDate
+  const filteredTasks = selectedDate
     ? tasks.filter(task => {
         const taskDate = new Date(task.date);
         return taskDate.toDateString() === selectedDate.toDateString();
@@ -142,6 +145,7 @@ function App() {
               <Task
                 key={task.id}
                 task={task}
+                onUpdate={handleUpdateTask}
                 onDelete={handleDeleteTask}
                 onToggle={handleToggleTask}
                 onEdit={handleEditTask}
