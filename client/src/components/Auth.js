@@ -19,53 +19,36 @@ const Auth = ({ onLogin }) => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   
-  const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
-  console.log('Current API_URL:', API_URL); // Debug log
+  // Use localhost for development
+  const API_URL = 'http://localhost:8080';
+  console.log('Current API_URL:', API_URL);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setLoading(true);
 
-    const axiosConfig = {
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    };
-
     try {
       const endpoint = tab === 'login' ? '/api/auth/login' : '/api/auth/register';
       const fullUrl = `${API_URL}${endpoint}`;
       console.log('Making request to:', fullUrl);
       
-      // Health check before auth request
-      try {
-        const healthCheckUrl = `${API_URL}/health`;
-        console.log('Checking health at:', healthCheckUrl);
-        const healthCheck = await axios.get(healthCheckUrl);
-        console.log('Health check response:', healthCheck.data);
-      } catch (healthError) {
-        console.error('Health check failed:', healthError);
-        throw new Error(`Server health check failed: ${healthError.message}`);
-      }
-      
       const response = await axios.post(fullUrl, {
         username,
         password
-      }, axiosConfig);
+      }, {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
 
       console.log('Auth response received');
 
       if (response.data && response.data.token) {
-        // Store token and user info
         localStorage.setItem('token', response.data.token);
         localStorage.setItem('username', response.data.username);
-        
-        // Reset form
         setUsername('');
         setPassword('');
-        
-        // Notify parent component
         onLogin(response.data);
       } else {
         throw new Error('Invalid response format from server');
@@ -73,17 +56,13 @@ const Auth = ({ onLogin }) => {
     } catch (error) {
       console.error('Auth error:', error);
       if (error.response) {
-        // The request was made and the server responded with a status code
-        // that falls out of the range of 2xx
         setError(error.response.data.message || 'Server error');
         console.error('Error response:', error.response.data);
         console.error('Status:', error.response.status);
       } else if (error.request) {
-        // The request was made but no response was received
-        setError('No response from server. Please check your connection and try again.');
+        setError('Cannot connect to server. Please make sure the backend is running.');
         console.error('No response received:', error.request);
       } else {
-        // Something happened in setting up the request that triggered an Error
         setError(error.message || 'Failed to connect to server');
         console.error('Error setting up request:', error.message);
       }
