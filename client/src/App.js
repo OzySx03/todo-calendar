@@ -6,6 +6,7 @@ import TaskList from './components/TaskList';
 import CalendarView from './components/CalendarView';
 import Auth from './components/Auth';
 import axios from 'axios';
+import { API_URL } from './config';
 
 function App() {
   const [tasks, setTasks] = useState([]);
@@ -13,7 +14,6 @@ function App() {
   const [selectedDate, setSelectedDate] = useState(null);
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
 
   useEffect(() => {
     const token = localStorage.getItem('token');

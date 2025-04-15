@@ -1,7 +1,8 @@
 import React from 'react';
-import { List, ListItem, ListItemText, ListItemSecondary, IconButton, Paper, Typography } from '@mui/material';
+import { List, ListItem, ListItemText, IconButton, Paper, Typography } from '@mui/material';
 import { Delete as DeleteIcon, Edit as EditIcon } from '@mui/icons-material';
 import axios from 'axios';
+import { API_URL } from '../config';
 
 const getPriorityColor = (priority = 'medium') => {
   switch (priority.toLowerCase()) {
@@ -29,8 +30,6 @@ const getPriorityColor = (priority = 'medium') => {
 };
 
 const TaskList = ({ tasks, onTaskUpdated, onTaskDeleted }) => {
-  const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
-
   const handleDelete = async (taskId) => {
     try {
       const token = localStorage.getItem('token');

@@ -11,6 +11,7 @@ import {
 } from '@mui/material';
 import { Login as LoginIcon, PersonAdd as RegisterIcon } from '@mui/icons-material';
 import axios from 'axios';
+import { API_URL } from '../config';
 
 const Auth = ({ onLogin }) => {
   const [tab, setTab] = useState('login');
@@ -18,10 +19,6 @@ const Auth = ({ onLogin }) => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  
-  // Use localhost for development
-  const API_URL = 'http://localhost:8080';
-  console.log('Current API_URL:', API_URL);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
