@@ -36,6 +36,11 @@ const Task = ({ task, onUpdate, onDelete }) => {
             <Typography variant="h6" component="div" gutterBottom>
               {task.title}
             </Typography>
+            {task.description && (
+              <Typography variant="body1" color="text.secondary" sx={{ mb: 1 }}>
+                {task.description}
+              </Typography>
+            )}
             <Typography variant="body2" color="text.secondary" gutterBottom>
               Due: {format(new Date(task.date), 'PPp')}
             </Typography>

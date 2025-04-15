@@ -6,6 +6,7 @@ import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 
 const TaskForm = ({ onSubmit, initialTask = null }) => {
   const [title, setTitle] = useState(initialTask?.title || '');
+  const [description, setDescription] = useState(initialTask?.description || '');
   const [date, setDate] = useState(initialTask?.date ? new Date(initialTask.date) : new Date());
   const [priority, setPriority] = useState(initialTask?.priority || 'medium');
 
@@ -13,12 +14,14 @@ const TaskForm = ({ onSubmit, initialTask = null }) => {
     e.preventDefault();
     onSubmit({
       title,
+      description,
       date: date.toISOString(),
       priority,
       completed: initialTask?.completed || false,
       id: initialTask?.id || Date.now()
     });
     setTitle('');
+    setDescription('');
     setDate(new Date());
     setPriority('medium');
   };
@@ -32,6 +35,16 @@ const TaskForm = ({ onSubmit, initialTask = null }) => {
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           required
+          sx={{ mb: 2 }}
+          variant="outlined"
+        />
+        <TextField
+          fullWidth
+          label="Description"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          multiline
+          rows={3}
           sx={{ mb: 2 }}
           variant="outlined"
         />
