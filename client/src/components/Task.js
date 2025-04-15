@@ -33,14 +33,24 @@ const Task = ({ task, onUpdate, onDelete }) => {
       <CardContent>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <Box sx={{ flex: 1 }}>
-            <Typography variant="h6" component="div" gutterBottom>
-              {task.title}
-            </Typography>
-            {task.description && (
-              <Typography variant="body1" color="text.secondary" sx={{ mb: 1 }}>
-                {task.description}
+            <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 2, mb: 1 }}>
+              <Typography variant="h6" component="div" sx={{ minWidth: 'fit-content' }}>
+                {task.title}
               </Typography>
-            )}
+              {task.description && (
+                <Typography 
+                  variant="body1" 
+                  color="text.secondary"
+                  sx={{ 
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap'
+                  }}
+                >
+                  {task.description}
+                </Typography>
+              )}
+            </Box>
             <Typography variant="body2" color="text.secondary" gutterBottom>
               Due: {format(new Date(task.date), 'PPp')}
             </Typography>
