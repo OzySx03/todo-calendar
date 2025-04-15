@@ -8,22 +8,22 @@ const getPriorityColor = (priority = 'medium') => {
     case 'high':
       return {
         border: '#ef5350',
-        background: '#ffebee'
+        background: 'rgba(239, 83, 80, 0.15)'  // Light red
       };
     case 'medium':
       return {
         border: '#ffa726',
-        background: '#fff3e0'
+        background: 'rgba(255, 167, 38, 0.15)'  // Light orange
       };
     case 'low':
       return {
         border: '#66bb6a',
-        background: '#e8f5e9'
+        background: 'rgba(102, 187, 106, 0.15)'  // Light green
       };
     default:
       return {
         border: '#9e9e9e',
-        background: '#f5f5f5'
+        background: 'rgba(158, 158, 158, 0.15)'  // Light grey
       };
   }
 };
