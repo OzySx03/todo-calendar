@@ -14,7 +14,9 @@ function App() {
 
   const fetchTasks = async () => {
     try {
-      const response = await axios.get(`${API_URL}/tasks`);
+      console.log('Fetching tasks from:', `${API_URL}/api/tasks`);
+      const response = await axios.get(`${API_URL}/api/tasks`);
+      console.log('Fetched tasks:', response.data);
       setTasks(response.data);
     } catch (error) {
       console.error('Error fetching tasks:', error);
@@ -27,16 +29,23 @@ function App() {
 
   const handleAddTask = async (task) => {
     try {
-      const response = await axios.post(`${API_URL}/tasks`, task);
+      console.log('Adding task:', task);
+      console.log('To URL:', `${API_URL}/api/tasks`);
+      const response = await axios.post(`${API_URL}/api/tasks`, task);
+      console.log('Server response:', response.data);
       setTasks([...tasks, response.data]);
     } catch (error) {
       console.error('Error adding task:', error);
+      if (error.response) {
+        console.error('Error response:', error.response.data);
+        console.error('Error status:', error.response.status);
+      }
     }
   };
 
   const handleUpdateTask = async (updatedTask) => {
     try {
-      await axios.put(`${API_URL}/tasks/${updatedTask.id}`, updatedTask);
+      await axios.put(`${API_URL}/api/tasks/${updatedTask.id}`, updatedTask);
       setTasks(tasks.map(task => task.id === updatedTask.id ? updatedTask : task));
     } catch (error) {
       console.error('Error updating task:', error);
@@ -45,7 +54,7 @@ function App() {
 
   const handleDeleteTask = async (taskId) => {
     try {
-      await axios.delete(`${API_URL}/tasks/${taskId}`);
+      await axios.delete(`${API_URL}/api/tasks/${taskId}`);
       setTasks(tasks.filter(task => task.id !== taskId));
     } catch (error) {
       console.error('Error deleting task:', error);

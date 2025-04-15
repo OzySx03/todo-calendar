@@ -3,8 +3,8 @@ import { Card, CardContent, Typography, IconButton, Box, Chip } from '@mui/mater
 import { Delete as DeleteIcon, Edit as EditIcon } from '@mui/icons-material';
 import { format } from 'date-fns';
 
-const getPriorityColor = (priority) => {
-  switch (priority) {
+const getPriorityColor = (priority = 'medium') => {
+  switch (priority.toLowerCase()) {
     case 'high':
       return '#ef5350'; // red
     case 'medium':
@@ -17,11 +17,14 @@ const getPriorityColor = (priority) => {
 };
 
 const Task = ({ task, onUpdate, onDelete }) => {
+  const priority = task.priority || 'medium';
+  const completed = task.completed || false;
+
   return (
     <Card 
       sx={{ 
         mb: 2,
-        borderLeft: `6px solid ${getPriorityColor(task.priority)}`,
+        borderLeft: `6px solid ${getPriorityColor(priority)}`,
         '&:hover': {
           boxShadow: 6
         }
@@ -38,20 +41,20 @@ const Task = ({ task, onUpdate, onDelete }) => {
             </Typography>
             <Box sx={{ mt: 1 }}>
               <Chip 
-                label={task.priority.toUpperCase()} 
+                label={priority.toUpperCase()} 
                 size="small"
                 sx={{ 
-                  backgroundColor: getPriorityColor(task.priority),
+                  backgroundColor: getPriorityColor(priority),
                   color: 'white',
                   fontWeight: 'bold'
                 }}
               />
               <Chip 
-                label={task.completed ? 'COMPLETED' : 'PENDING'} 
+                label={completed ? 'COMPLETED' : 'PENDING'} 
                 size="small"
                 sx={{ 
                   ml: 1,
-                  backgroundColor: task.completed ? '#4caf50' : '#ff9800',
+                  backgroundColor: completed ? '#4caf50' : '#ff9800',
                   color: 'white',
                   fontWeight: 'bold'
                 }}
@@ -60,7 +63,7 @@ const Task = ({ task, onUpdate, onDelete }) => {
           </Box>
           <Box>
             <IconButton 
-              onClick={() => onUpdate({ ...task, completed: !task.completed })}
+              onClick={() => onUpdate({ ...task, completed: !completed })}
               color="primary"
             >
               <EditIcon />

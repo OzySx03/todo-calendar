@@ -56,11 +56,11 @@ app.post('/api/tasks', async (req, res) => {
   try {
     const tasks = await readTasks();
     const newTask = {
-      id: Date.now().toString(),
+      id: req.body.id || Date.now().toString(),
       title: req.body.title,
-      description: req.body.description,
       date: req.body.date,
-      completed: false,
+      priority: req.body.priority || 'medium',
+      completed: req.body.completed || false,
       createdAt: new Date().toISOString()
     };
     tasks.push(newTask);
@@ -97,33 +97,8 @@ app.delete('/api/tasks/:id', async (req, res) => {
   }
 });
 
-// Function to find an available port
-function findAvailablePort(startPort) {
-  return new Promise((resolve, reject) => {
-    const server = require('net').createServer();
-    server.on('error', (err) => {
-      if (err.code === 'EADDRINUSE') {
-        server.close();
-        resolve(findAvailablePort(startPort + 1));
-      } else {
-        reject(err);
-      }
-    });
-    server.listen(startPort, () => {
-      const port = server.address().port;
-      server.close();
-      resolve(port);
-    });
-  });
-}
-
-// Start server on an available port
-findAvailablePort(5000)
-  .then(port => {
-    app.listen(port, () => {
-      console.log(`Server is running on port ${port}`);
-    });
-  })
-  .catch(err => {
-    console.error('Could not start server:', err);
-  }); 
+// Start server
+const PORT = process.env.PORT || 3001;
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
+}); 
