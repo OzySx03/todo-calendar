@@ -10,38 +10,28 @@ const app = express();
 const TASKS_FILE = path.join(__dirname, 'data', 'tasks.json');
 const USERS_FILE = path.join(__dirname, 'data', 'users.json');
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
+const PORT = process.env.PORT || 5000;
 
-// Middleware
+// Enable CORS for all routes
+app.use(cors());
+
+// Middleware for logging
 app.use((req, res, next) => {
-  console.log('Incoming request:', req.method, req.path, 'from origin:', req.headers.origin);
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
+  console.log('Headers:', req.headers);
   next();
 });
 
-app.use(cors({
-  origin: function(origin, callback) {
-    const allowedOrigins = [
-      'http://localhost:3000',
-      'https://ozysx03.github.io',
-      'https://ozysx03.github.io/todo-calendar'
-    ];
-    
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
-    
-    if (allowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV === 'development') {
-      callback(null, true);
-    } else {
-      console.error('Origin not allowed:', origin);
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: false,
-  optionsSuccessStatus: 200
-}));
-
 app.use(bodyParser.json());
+
+// Basic health check endpoint
+app.get('/health', (req, res) => {
+  res.json({ 
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development'
+  });
+});
 
 // Error handling middleware
 app.use((err, req, res, next) => {
@@ -291,26 +281,7 @@ app.delete('/api/tasks/:id', authenticateToken, async (req, res) => {
   }
 });
 
-// Add preflight handler
-app.options('*', cors());
-
-// Health check route with CORS headers
-app.get('/health', (req, res) => {
-  res.header('Access-Control-Allow-Origin', 'https://ozysx03.github.io');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  res.json({ 
-    status: 'ok', 
-    timestamp: new Date().toISOString(),
-    cors: {
-      enabled: true,
-      origins: ['http://localhost:3000', 'https://ozysx03.github.io/todo-calendar', 'https://ozysx03.github.io']
-    }
-  });
-});
-
 // Start server
-const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 }); 
