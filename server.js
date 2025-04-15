@@ -118,6 +118,7 @@ app.post('/api/tasks', authenticateToken, (req, res) => {
     id: Date.now().toString(),
     userId: req.user.id,
     title: req.body.title,
+    description: req.body.description,
     date: req.body.date,
     priority: req.body.priority || 'medium',
     completed: req.body.completed || false
