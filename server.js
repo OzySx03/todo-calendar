@@ -1,18 +1,18 @@
 const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
-const fs = require('fs').promises;
-const path = require('path');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
 const app = express();
-const TASKS_FILE = path.join(__dirname, 'data', 'tasks.json');
-const USERS_FILE = path.join(__dirname, 'data', 'users.json');
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 const PORT = process.env.PORT || 8080;
 
-// Enable CORS for all routes with specific configuration
+// In-memory storage
+let tasks = [];
+let users = [];
+
+// Enable CORS for all routes
 app.use(cors({
   origin: '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -49,66 +49,6 @@ app.use((err, req, res, next) => {
   res.status(500).json({ message: 'Internal server error', error: err.message });
 });
 
-// Ensure data directory exists
-async function ensureDataFiles() {
-  try {
-    const dataDir = path.join(__dirname, 'data');
-    await fs.mkdir(dataDir, { recursive: true });
-    
-    // Initialize empty files if they don't exist
-    if (!fs.existsSync(TASKS_FILE)) {
-      await fs.writeFile(TASKS_FILE, '[]');
-    }
-    if (!fs.existsSync(USERS_FILE)) {
-      await fs.writeFile(USERS_FILE, '[]');
-    }
-  } catch (error) {
-    console.error('Error ensuring data files:', error);
-  }
-}
-
-// Read tasks from file
-async function readTasks() {
-  try {
-    const data = await fs.readFile(TASKS_FILE, 'utf8');
-    return JSON.parse(data);
-  } catch (error) {
-    console.error('Error reading tasks:', error);
-    return [];
-  }
-}
-
-// Write tasks to file
-async function writeTasks(tasks) {
-  try {
-    await fs.writeFile(TASKS_FILE, JSON.stringify(tasks, null, 2));
-  } catch (error) {
-    console.error('Error writing tasks:', error);
-    throw error;
-  }
-}
-
-// Read users from file
-async function readUsers() {
-  try {
-    const data = await fs.readFile(USERS_FILE, 'utf8');
-    return JSON.parse(data);
-  } catch (error) {
-    console.error('Error reading users:', error);
-    return [];
-  }
-}
-
-// Write users to file
-async function writeUsers(users) {
-  try {
-    await fs.writeFile(USERS_FILE, JSON.stringify(users, null, 2));
-  } catch (error) {
-    console.error('Error writing users:', error);
-    throw error;
-  }
-}
-
 // Authentication middleware
 const authenticateToken = (req, res, next) => {
   const authHeader = req.headers['authorization'];
@@ -127,9 +67,6 @@ const authenticateToken = (req, res, next) => {
   });
 };
 
-// Initialize data files
-ensureDataFiles().catch(console.error);
-
 // Auth Routes
 app.post('/api/auth/register', async (req, res) => {
   try {
@@ -140,9 +77,6 @@ app.post('/api/auth/register', async (req, res) => {
       console.log('Registration failed: Missing username or password');
       return res.status(400).json({ message: 'Username and password are required' });
     }
-
-    const users = await readUsers();
-    console.log('Current users count:', users.length);
 
     // Check if username already exists
     if (users.some(user => user.username === username)) {
@@ -161,7 +95,6 @@ app.post('/api/auth/register', async (req, res) => {
     };
 
     users.push(newUser);
-    await writeUsers(users);
 
     // Generate token
     const token = jwt.sign({ id: newUser.id, username: newUser.username }, JWT_SECRET, { expiresIn: '24h' });
@@ -182,8 +115,6 @@ app.post('/api/auth/login', async (req, res) => {
     if (!username || !password) {
       return res.status(400).json({ message: 'Username and password are required' });
     }
-
-    const users = await readUsers();
 
     // Find user
     const user = users.find(u => u.username === username);
@@ -208,10 +139,9 @@ app.post('/api/auth/login', async (req, res) => {
   }
 });
 
-// Task Routes (now with authentication)
-app.get('/api/tasks', authenticateToken, async (req, res) => {
+// Task Routes
+app.get('/api/tasks', authenticateToken, (req, res) => {
   try {
-    const tasks = await readTasks();
     // Only return tasks for the authenticated user
     const userTasks = tasks.filter(task => task.userId === req.user.id);
     userTasks.sort((a, b) => new Date(a.date) - new Date(b.date));
@@ -222,11 +152,10 @@ app.get('/api/tasks', authenticateToken, async (req, res) => {
   }
 });
 
-app.post('/api/tasks', authenticateToken, async (req, res) => {
+app.post('/api/tasks', authenticateToken, (req, res) => {
   try {
-    const tasks = await readTasks();
     const newTask = {
-      id: req.body.id || Date.now().toString(),
+      id: Date.now().toString(),
       userId: req.user.id,
       title: req.body.title,
       date: req.body.date,
@@ -235,7 +164,6 @@ app.post('/api/tasks', authenticateToken, async (req, res) => {
       createdAt: new Date().toISOString()
     };
     tasks.push(newTask);
-    await writeTasks(tasks);
     res.status(201).json(newTask);
   } catch (error) {
     console.error('Error creating task:', error);
@@ -243,9 +171,8 @@ app.post('/api/tasks', authenticateToken, async (req, res) => {
   }
 });
 
-app.put('/api/tasks/:id', authenticateToken, async (req, res) => {
+app.put('/api/tasks/:id', authenticateToken, (req, res) => {
   try {
-    const tasks = await readTasks();
     const taskIndex = tasks.findIndex(task => 
       task.id === req.params.id && task.userId === req.user.id
     );
@@ -260,7 +187,6 @@ app.put('/api/tasks/:id', authenticateToken, async (req, res) => {
       userId: req.user.id  // Ensure userId cannot be changed
     };
 
-    await writeTasks(tasks);
     res.json(tasks[taskIndex]);
   } catch (error) {
     console.error('Error updating task:', error);
@@ -268,18 +194,17 @@ app.put('/api/tasks/:id', authenticateToken, async (req, res) => {
   }
 });
 
-app.delete('/api/tasks/:id', authenticateToken, async (req, res) => {
+app.delete('/api/tasks/:id', authenticateToken, (req, res) => {
   try {
-    const tasks = await readTasks();
-    const filteredTasks = tasks.filter(task => 
+    const initialLength = tasks.length;
+    tasks = tasks.filter(task => 
       !(task.id === req.params.id && task.userId === req.user.id)
     );
     
-    if (filteredTasks.length === tasks.length) {
+    if (tasks.length === initialLength) {
       return res.status(404).json({ message: 'Task not found' });
     }
 
-    await writeTasks(filteredTasks);
     res.json({ message: 'Task deleted' });
   } catch (error) {
     console.error('Error deleting task:', error);
@@ -291,9 +216,6 @@ app.delete('/api/tasks/:id', authenticateToken, async (req, res) => {
 const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server is running on port ${PORT}`);
   console.log('Environment:', process.env.NODE_ENV);
-  
-  // Ensure data files exist after server starts
-  ensureDataFiles().catch(console.error);
 });
 
 // Handle server errors
