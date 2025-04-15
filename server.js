@@ -13,16 +13,12 @@ let tasks = [];
 let users = [];
 
 // Enable CORS for all routes
-app.use(cors({
-  origin: '*',
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-}));
+app.use(cors());
 
 // Middleware for logging
 app.use((req, res, next) => {
   console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
-  console.log('Origin:', req.headers.origin);
+  console.log('Headers:', JSON.stringify(req.headers, null, 2));
   next();
 });
 
@@ -30,7 +26,11 @@ app.use(bodyParser.json());
 
 // Root endpoint for basic check
 app.get('/', (req, res) => {
-  res.json({ message: 'Server is running' });
+  res.json({ 
+    message: 'Server is running',
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development'
+  });
 });
 
 // Basic health check endpoint
@@ -39,7 +39,8 @@ app.get('/health', (req, res) => {
     status: 'ok',
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV || 'development',
-    port: PORT
+    port: PORT,
+    memory: process.memoryUsage().heapUsed / 1024 / 1024
   });
 });
 
