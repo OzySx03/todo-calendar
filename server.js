@@ -3,16 +3,20 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 const fs = require('fs').promises;
 const path = require('path');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 
 const app = express();
-const DATA_FILE = path.join(__dirname, 'data', 'tasks.json');
+const TASKS_FILE = path.join(__dirname, 'data', 'tasks.json');
+const USERS_FILE = path.join(__dirname, 'data', 'users.json');
+const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 
 // Middleware
 app.use(cors());
 app.use(bodyParser.json());
 
-// Ensure data directory and file exist
-async function ensureDataFile() {
+// Ensure data directory and files exist
+async function ensureDataFiles() {
   const dataDir = path.join(__dirname, 'data');
   try {
     await fs.access(dataDir);
@@ -21,16 +25,22 @@ async function ensureDataFile() {
   }
   
   try {
-    await fs.access(DATA_FILE);
+    await fs.access(TASKS_FILE);
   } catch {
-    await fs.writeFile(DATA_FILE, '[]');
+    await fs.writeFile(TASKS_FILE, '[]');
+  }
+
+  try {
+    await fs.access(USERS_FILE);
+  } catch {
+    await fs.writeFile(USERS_FILE, '[]');
   }
 }
 
 // Read tasks from file
 async function readTasks() {
   try {
-    const data = await fs.readFile(DATA_FILE, 'utf8');
+    const data = await fs.readFile(TASKS_FILE, 'utf8');
     return JSON.parse(data);
   } catch (error) {
     console.error('Error reading tasks:', error);
@@ -41,34 +51,136 @@ async function readTasks() {
 // Write tasks to file
 async function writeTasks(tasks) {
   try {
-    await fs.writeFile(DATA_FILE, JSON.stringify(tasks, null, 2));
+    await fs.writeFile(TASKS_FILE, JSON.stringify(tasks, null, 2));
   } catch (error) {
     console.error('Error writing tasks:', error);
     throw error;
   }
 }
 
-// Initialize data file
-ensureDataFile().catch(console.error);
+// Read users from file
+async function readUsers() {
+  try {
+    const data = await fs.readFile(USERS_FILE, 'utf8');
+    return JSON.parse(data);
+  } catch (error) {
+    console.error('Error reading users:', error);
+    return [];
+  }
+}
 
-// Routes
-app.get('/api/tasks', async (req, res) => {
+// Write users to file
+async function writeUsers(users) {
+  try {
+    await fs.writeFile(USERS_FILE, JSON.stringify(users, null, 2));
+  } catch (error) {
+    console.error('Error writing users:', error);
+    throw error;
+  }
+}
+
+// Authentication middleware
+const authenticateToken = (req, res, next) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+
+  if (!token) {
+    return res.status(401).json({ message: 'Authentication token required' });
+  }
+
+  jwt.verify(token, JWT_SECRET, (err, user) => {
+    if (err) {
+      return res.status(403).json({ message: 'Invalid or expired token' });
+    }
+    req.user = user;
+    next();
+  });
+};
+
+// Initialize data files
+ensureDataFiles().catch(console.error);
+
+// Auth Routes
+app.post('/api/auth/register', async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    const users = await readUsers();
+
+    // Check if username already exists
+    if (users.some(user => user.username === username)) {
+      return res.status(400).json({ message: 'Username already exists' });
+    }
+
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Create new user
+    const newUser = {
+      id: Date.now().toString(),
+      username,
+      password: hashedPassword
+    };
+
+    users.push(newUser);
+    await writeUsers(users);
+
+    // Generate token
+    const token = jwt.sign({ id: newUser.id, username: newUser.username }, JWT_SECRET, { expiresIn: '24h' });
+
+    res.status(201).json({ token, username });
+  } catch (error) {
+    console.error('Error registering user:', error);
+    res.status(500).json({ message: 'Error registering user' });
+  }
+});
+
+app.post('/api/auth/login', async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    const users = await readUsers();
+
+    // Find user
+    const user = users.find(u => u.username === username);
+    if (!user) {
+      return res.status(401).json({ message: 'Invalid username or password' });
+    }
+
+    // Check password
+    const validPassword = await bcrypt.compare(password, user.password);
+    if (!validPassword) {
+      return res.status(401).json({ message: 'Invalid username or password' });
+    }
+
+    // Generate token
+    const token = jwt.sign({ id: user.id, username: user.username }, JWT_SECRET, { expiresIn: '24h' });
+
+    res.json({ token, username });
+  } catch (error) {
+    console.error('Error logging in:', error);
+    res.status(500).json({ message: 'Error logging in' });
+  }
+});
+
+// Task Routes (now with authentication)
+app.get('/api/tasks', authenticateToken, async (req, res) => {
   try {
     const tasks = await readTasks();
-    // Sort tasks by date
-    tasks.sort((a, b) => new Date(a.date) - new Date(b.date));
-    res.json(tasks);
+    // Only return tasks for the authenticated user
+    const userTasks = tasks.filter(task => task.userId === req.user.id);
+    userTasks.sort((a, b) => new Date(a.date) - new Date(b.date));
+    res.json(userTasks);
   } catch (error) {
     console.error('Error getting tasks:', error);
     res.status(500).json({ message: error.message });
   }
 });
 
-app.post('/api/tasks', async (req, res) => {
+app.post('/api/tasks', authenticateToken, async (req, res) => {
   try {
     const tasks = await readTasks();
     const newTask = {
       id: req.body.id || Date.now().toString(),
+      userId: req.user.id,
       title: req.body.title,
       date: req.body.date,
       priority: req.body.priority || 'medium',
@@ -84,26 +196,42 @@ app.post('/api/tasks', async (req, res) => {
   }
 });
 
-app.put('/api/tasks/:id', async (req, res) => {
+app.put('/api/tasks/:id', authenticateToken, async (req, res) => {
   try {
     const tasks = await readTasks();
-    const index = tasks.findIndex(task => task.id === req.params.id);
-    if (index === -1) {
+    const taskIndex = tasks.findIndex(task => 
+      task.id === req.params.id && task.userId === req.user.id
+    );
+    
+    if (taskIndex === -1) {
       return res.status(404).json({ message: 'Task not found' });
     }
-    tasks[index] = { ...tasks[index], ...req.body };
+
+    tasks[taskIndex] = { 
+      ...tasks[taskIndex], 
+      ...req.body,
+      userId: req.user.id  // Ensure userId cannot be changed
+    };
+
     await writeTasks(tasks);
-    res.json(tasks[index]);
+    res.json(tasks[taskIndex]);
   } catch (error) {
     console.error('Error updating task:', error);
     res.status(400).json({ message: error.message });
   }
 });
 
-app.delete('/api/tasks/:id', async (req, res) => {
+app.delete('/api/tasks/:id', authenticateToken, async (req, res) => {
   try {
     const tasks = await readTasks();
-    const filteredTasks = tasks.filter(task => task.id !== req.params.id);
+    const filteredTasks = tasks.filter(task => 
+      !(task.id === req.params.id && task.userId === req.user.id)
+    );
+    
+    if (filteredTasks.length === tasks.length) {
+      return res.status(404).json({ message: 'Task not found' });
+    }
+
     await writeTasks(filteredTasks);
     res.json({ message: 'Task deleted' });
   } catch (error) {
