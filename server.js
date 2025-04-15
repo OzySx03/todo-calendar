@@ -11,13 +11,18 @@ const DATA_FILE = path.join(__dirname, 'data', 'tasks.json');
 app.use(cors());
 app.use(bodyParser.json());
 
-// Ensure data directory exists
-async function ensureDataDirectory() {
+// Ensure data directory and file exist
+async function ensureDataFile() {
   const dataDir = path.join(__dirname, 'data');
   try {
     await fs.access(dataDir);
   } catch {
     await fs.mkdir(dataDir);
+  }
+  
+  try {
+    await fs.access(DATA_FILE);
+  } catch {
     await fs.writeFile(DATA_FILE, '[]');
   }
 }
@@ -28,17 +33,23 @@ async function readTasks() {
     const data = await fs.readFile(DATA_FILE, 'utf8');
     return JSON.parse(data);
   } catch (error) {
+    console.error('Error reading tasks:', error);
     return [];
   }
 }
 
 // Write tasks to file
 async function writeTasks(tasks) {
-  await fs.writeFile(DATA_FILE, JSON.stringify(tasks, null, 2));
+  try {
+    await fs.writeFile(DATA_FILE, JSON.stringify(tasks, null, 2));
+  } catch (error) {
+    console.error('Error writing tasks:', error);
+    throw error;
+  }
 }
 
-// Initialize data directory
-ensureDataDirectory();
+// Initialize data file
+ensureDataFile().catch(console.error);
 
 // Routes
 app.get('/api/tasks', async (req, res) => {
@@ -48,6 +59,7 @@ app.get('/api/tasks', async (req, res) => {
     tasks.sort((a, b) => new Date(a.date) - new Date(b.date));
     res.json(tasks);
   } catch (error) {
+    console.error('Error getting tasks:', error);
     res.status(500).json({ message: error.message });
   }
 });
@@ -67,6 +79,7 @@ app.post('/api/tasks', async (req, res) => {
     await writeTasks(tasks);
     res.status(201).json(newTask);
   } catch (error) {
+    console.error('Error creating task:', error);
     res.status(400).json({ message: error.message });
   }
 });
@@ -82,6 +95,7 @@ app.put('/api/tasks/:id', async (req, res) => {
     await writeTasks(tasks);
     res.json(tasks[index]);
   } catch (error) {
+    console.error('Error updating task:', error);
     res.status(400).json({ message: error.message });
   }
 });
@@ -93,6 +107,7 @@ app.delete('/api/tasks/:id', async (req, res) => {
     await writeTasks(filteredTasks);
     res.json({ message: 'Task deleted' });
   } catch (error) {
+    console.error('Error deleting task:', error);
     res.status(500).json({ message: error.message });
   }
 });
