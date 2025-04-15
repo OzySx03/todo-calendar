@@ -213,15 +213,31 @@ app.delete('/api/tasks/:id', authenticateToken, (req, res) => {
 });
 
 // Start server with error handling
-const server = app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Server is running on port ${PORT}`);
-  console.log('Environment:', process.env.NODE_ENV);
+const host = '0.0.0.0';
+const server = app.listen(PORT, host, () => {
+  console.log('=================================');
+  console.log(`Server is running at http://${host}:${PORT}`);
+  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`Memory usage: ${process.memoryUsage().heapUsed / 1024 / 1024} MB`);
+  console.log('JWT Secret length:', JWT_SECRET.length);
+  console.log('=================================');
+}).on('error', (error) => {
+  console.error('Failed to start server:', error);
+  process.exit(1);
 });
 
 // Handle server errors
 server.on('error', (error) => {
   console.error('Server error:', error);
+  if (error.code === 'EADDRINUSE') {
+    console.error(`Port ${PORT} is already in use`);
+    process.exit(1);
+  }
 });
+
+// Add a keep-alive configuration
+server.keepAliveTimeout = 65000; // Ensure keep-alive timeout is higher than load balancer
+server.headersTimeout = 66000; // Ensure headers timeout is slightly higher than keep-alive
 
 // Handle process termination
 process.on('SIGTERM', () => {
@@ -230,11 +246,29 @@ process.on('SIGTERM', () => {
     console.log('Server closed');
     process.exit(0);
   });
+  // Force close server after timeout
+  setTimeout(() => {
+    console.error('Could not close connections in time, forcefully shutting down');
+    process.exit(1);
+  }, 10000);
 });
 
 process.on('uncaughtException', (error) => {
   console.error('Uncaught Exception:', error);
+  // Give the server a chance to send any pending responses before exiting
   server.close(() => {
+    console.log('Server closed due to uncaught exception');
     process.exit(1);
   });
+  // If server.close() takes too long, force exit
+  setTimeout(() => {
+    console.error('Could not close connections in time, forcefully shutting down');
+    process.exit(1);
+  }, 10000);
+});
+
+// Handle unhandled promise rejections
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Promise Rejection:', reason);
+  // Do not exit the process, but log the error
 }); 
