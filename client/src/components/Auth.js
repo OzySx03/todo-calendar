@@ -20,7 +20,7 @@ const Auth = ({ onLogin }) => {
   const [loading, setLoading] = useState(false);
   
   // Ensure API_URL doesn't end with a slash
-  const API_URL = (process.env.REACT_APP_API_URL || 'http://localhost:5000').replace(/\/$/, '');
+  const API_URL = (process.env.REACT_APP_API_URL || 'http://192.168.242.1:8080').replace(/\/$/, '');
 
   const handleSubmit = async (e) => {
     e.preventDefault();

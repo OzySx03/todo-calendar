@@ -4,7 +4,7 @@ import { Delete as DeleteIcon, Edit as EditIcon } from '@mui/icons-material';
 import axios from 'axios';
 
 const TaskList = ({ tasks, onTaskUpdated, onTaskDeleted }) => {
-  const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
+  const API_URL = process.env.REACT_APP_API_URL || 'http://192.168.242.1:8080';
 
   const handleDelete = async (taskId) => {
     try {
