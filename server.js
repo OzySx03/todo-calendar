@@ -10,26 +10,36 @@ const app = express();
 const TASKS_FILE = path.join(__dirname, 'data', 'tasks.json');
 const USERS_FILE = path.join(__dirname, 'data', 'users.json');
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 8080;
 
-// Enable CORS for all routes
-app.use(cors());
+// Enable CORS for all routes with specific configuration
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 
 // Middleware for logging
 app.use((req, res, next) => {
   console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
-  console.log('Headers:', req.headers);
+  console.log('Origin:', req.headers.origin);
   next();
 });
 
 app.use(bodyParser.json());
+
+// Root endpoint for basic check
+app.get('/', (req, res) => {
+  res.json({ message: 'Server is running' });
+});
 
 // Basic health check endpoint
 app.get('/health', (req, res) => {
   res.json({ 
     status: 'ok',
     timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || 'development'
+    environment: process.env.NODE_ENV || 'development',
+    port: PORT
   });
 });
 
@@ -39,25 +49,21 @@ app.use((err, req, res, next) => {
   res.status(500).json({ message: 'Internal server error', error: err.message });
 });
 
-// Ensure data directory and files exist
+// Ensure data directory exists
 async function ensureDataFiles() {
-  const dataDir = path.join(__dirname, 'data');
   try {
-    await fs.access(dataDir);
-  } catch {
-    await fs.mkdir(dataDir);
-  }
-  
-  try {
-    await fs.access(TASKS_FILE);
-  } catch {
-    await fs.writeFile(TASKS_FILE, '[]');
-  }
-
-  try {
-    await fs.access(USERS_FILE);
-  } catch {
-    await fs.writeFile(USERS_FILE, '[]');
+    const dataDir = path.join(__dirname, 'data');
+    await fs.mkdir(dataDir, { recursive: true });
+    
+    // Initialize empty files if they don't exist
+    if (!fs.existsSync(TASKS_FILE)) {
+      await fs.writeFile(TASKS_FILE, '[]');
+    }
+    if (!fs.existsSync(USERS_FILE)) {
+      await fs.writeFile(USERS_FILE, '[]');
+    }
+  } catch (error) {
+    console.error('Error ensuring data files:', error);
   }
 }
 
@@ -281,7 +287,32 @@ app.delete('/api/tasks/:id', authenticateToken, async (req, res) => {
   }
 });
 
-// Start server
-app.listen(PORT, () => {
+// Start server with error handling
+const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server is running on port ${PORT}`);
+  console.log('Environment:', process.env.NODE_ENV);
+  
+  // Ensure data files exist after server starts
+  ensureDataFiles().catch(console.error);
+});
+
+// Handle server errors
+server.on('error', (error) => {
+  console.error('Server error:', error);
+});
+
+// Handle process termination
+process.on('SIGTERM', () => {
+  console.log('Received SIGTERM signal. Shutting down gracefully...');
+  server.close(() => {
+    console.log('Server closed');
+    process.exit(0);
+  });
+});
+
+process.on('uncaughtException', (error) => {
+  console.error('Uncaught Exception:', error);
+  server.close(() => {
+    process.exit(1);
+  });
 }); 
