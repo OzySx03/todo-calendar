@@ -39,7 +39,9 @@ function App() {
 
   const fetchTasks = async () => {
     try {
+      console.log('Fetching tasks from:', API_URL);
       const response = await axios.get(`${API_URL}/tasks`);
+      console.log('Fetched tasks:', response.data);
       setTasks(response.data);
     } catch (error) {
       console.error('Error fetching tasks:', error);
@@ -52,15 +54,23 @@ function App() {
 
   const handleAddTask = async (task) => {
     try {
+      console.log('Adding task:', task);
+      console.log('API URL:', API_URL);
       const response = await axios.post(`${API_URL}/tasks`, task);
+      console.log('Task added successfully:', response.data);
       setTasks([...tasks, response.data]);
     } catch (error) {
       console.error('Error adding task:', error);
+      if (error.response) {
+        console.error('Error response:', error.response.data);
+        console.error('Error status:', error.response.status);
+      }
     }
   };
 
   const handleUpdateTask = async (updatedTask) => {
     try {
+      console.log('Updating task:', updatedTask);
       await axios.put(`${API_URL}/tasks/${updatedTask.id}`, updatedTask);
       setTasks(tasks.map(task => task.id === updatedTask.id ? updatedTask : task));
     } catch (error) {
@@ -70,6 +80,7 @@ function App() {
 
   const handleDeleteTask = async (taskId) => {
     try {
+      console.log('Deleting task:', taskId);
       await axios.delete(`${API_URL}/tasks/${taskId}`);
       setTasks(tasks.filter(task => task.id !== taskId));
     } catch (error) {
@@ -122,43 +133,72 @@ function App() {
         </Toolbar>
       </AppBar>
       <Container maxWidth="md" sx={{ mt: 4 }}>
-        {view === 'calendar' ? (
-          <CalendarView tasks={tasks} onTaskClick={handleTaskClick} />
-        ) : (
-          <>
-            <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Typography variant="h6">
-                {selectedDate ? `Tasks for ${selectedDate.toLocaleDateString()}` : 'All Tasks'}
-              </Typography>
-              <Button
-                variant="contained"
-                startIcon={<AddIcon />}
-                onClick={() => {
-                  setEditingTask(null);
-                  setOpenForm(true);
-                }}
-              >
-                Add Task
-              </Button>
-            </Box>
-            {filteredTasks.map(task => (
-              <Task
-                key={task.id}
-                task={task}
-                onUpdate={handleUpdateTask}
-                onDelete={handleDeleteTask}
-                onToggle={handleToggleTask}
-                onEdit={handleEditTask}
+        <Box sx={{ my: 4 }}>
+          <Typography variant="h4" component="h1" gutterBottom>
+            ToDo Calendar
+          </Typography>
+          
+          <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
+            <Tabs 
+              value={view} 
+              onChange={(e, newValue) => setView(newValue)}
+              aria-label="view tabs"
+            >
+              <Tab 
+                icon={<ListIcon />} 
+                label="List View" 
+                value="list" 
               />
-            ))}
-          </>
-        )}
-        <TaskForm
-          open={openForm}
-          handleClose={() => setOpenForm(false)}
-          handleSubmit={handleAddTask}
-          task={editingTask}
-        />
+              <Tab 
+                icon={<CalendarIcon />} 
+                label="Calendar View" 
+                value="calendar" 
+              />
+            </Tabs>
+          </Box>
+
+          <TaskForm
+            open={openForm}
+            handleClose={() => setOpenForm(false)}
+            handleSubmit={handleAddTask}
+            task={editingTask}
+          />
+          
+          {view === 'list' ? (
+            <Box sx={{ mt: 3 }}>
+              <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Typography variant="h6">
+                  {selectedDate ? `Tasks for ${selectedDate.toLocaleDateString()}` : 'All Tasks'}
+                </Typography>
+                <Button
+                  variant="contained"
+                  startIcon={<AddIcon />}
+                  onClick={() => {
+                    setEditingTask(null);
+                    setOpenForm(true);
+                  }}
+                >
+                  Add Task
+                </Button>
+              </Box>
+              {filteredTasks.map(task => (
+                <Task
+                  key={task.id}
+                  task={task}
+                  onUpdate={handleUpdateTask}
+                  onDelete={handleDeleteTask}
+                  onToggle={handleToggleTask}
+                  onEdit={handleEditTask}
+                />
+              ))}
+            </Box>
+          ) : (
+            <CalendarView 
+              tasks={tasks} 
+              onTaskClick={handleTaskClick} 
+            />
+          )}
+        </Box>
       </Container>
     </ThemeProvider>
   );
