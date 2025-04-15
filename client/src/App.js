@@ -60,6 +60,20 @@ function App() {
     setView('list');
   };
 
+  const handleAddTask = async (taskData) => {
+    try {
+      const token = localStorage.getItem('token');
+      await axios.post(`${API_URL}/api/tasks`, taskData, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      fetchTasks(); // Refresh the task list
+    } catch (error) {
+      console.error('Error adding task:', error);
+    }
+  };
+
   if (loading) {
     return <div>Loading...</div>;
   }
@@ -119,7 +133,7 @@ function App() {
           />
         </Tabs>
 
-        <TaskForm onTaskAdded={fetchTasks} />
+        <TaskForm onSubmit={handleAddTask} />
 
         {view === 'list' ? (
           <TaskList 
