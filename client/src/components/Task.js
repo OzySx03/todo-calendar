@@ -33,15 +33,41 @@ const Task = ({ task, onUpdate, onDelete }) => {
       <CardContent>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <Box sx={{ flex: 1 }}>
-            <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 2, mb: 1 }}>
-              <Typography variant="h6" component="div" sx={{ minWidth: 'fit-content' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
+              <Typography variant="h6" component="div">
                 {task.title}
               </Typography>
+            </Box>
+            <Typography variant="body2" color="text.secondary" gutterBottom>
+              Due: {format(new Date(task.date), 'PPp')}
+            </Typography>
+            <Box sx={{ mt: 1, display: 'flex', alignItems: 'center', gap: 2 }}>
+              <Box sx={{ display: 'flex', gap: 1 }}>
+                <Chip 
+                  label={priority.toUpperCase()} 
+                  size="small"
+                  sx={{ 
+                    backgroundColor: getPriorityColor(priority),
+                    color: 'white',
+                    fontWeight: 'bold'
+                  }}
+                />
+                <Chip 
+                  label={completed ? 'COMPLETED' : 'PENDING'} 
+                  size="small"
+                  sx={{ 
+                    backgroundColor: completed ? '#4caf50' : '#ff9800',
+                    color: 'white',
+                    fontWeight: 'bold'
+                  }}
+                />
+              </Box>
               {task.description && (
                 <Typography 
-                  variant="body1" 
+                  variant="body2" 
                   color="text.secondary"
                   sx={{ 
+                    flex: 1,
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
                     whiteSpace: 'nowrap'
@@ -50,30 +76,6 @@ const Task = ({ task, onUpdate, onDelete }) => {
                   {task.description}
                 </Typography>
               )}
-            </Box>
-            <Typography variant="body2" color="text.secondary" gutterBottom>
-              Due: {format(new Date(task.date), 'PPp')}
-            </Typography>
-            <Box sx={{ mt: 1 }}>
-              <Chip 
-                label={priority.toUpperCase()} 
-                size="small"
-                sx={{ 
-                  backgroundColor: getPriorityColor(priority),
-                  color: 'white',
-                  fontWeight: 'bold'
-                }}
-              />
-              <Chip 
-                label={completed ? 'COMPLETED' : 'PENDING'} 
-                size="small"
-                sx={{ 
-                  ml: 1,
-                  backgroundColor: completed ? '#4caf50' : '#ff9800',
-                  color: 'white',
-                  fontWeight: 'bold'
-                }}
-              />
             </Box>
           </Box>
           <Box>
