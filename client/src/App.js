@@ -13,7 +13,7 @@ function App() {
   const [selectedDate, setSelectedDate] = useState(null);
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const API_URL = process.env.REACT_APP_API_URL || 'http://192.168.242.1:8080';
+  const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
 
   useEffect(() => {
     const token = localStorage.getItem('token');
