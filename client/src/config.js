@@ -3,7 +3,7 @@ const getApiUrl = () => {
   if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
     return 'http://localhost:8080';  // Local development
   } else {
-    return 'https://todo-calendar-production.up.railway.app';  // Production
+    return 'https://todo-calendar-api.onrender.com';  // Production on Render
   }
 };
 
@@ -13,11 +13,9 @@ export const API_URL = getApiUrl();
 export const API_CONFIG = {
   headers: {
     'Content-Type': 'application/json',
-    'Accept': 'application/json',
-    'Origin': window.location.origin
+    'Accept': 'application/json'
   },
-  withCredentials: false,  // Must be false when using '*' for CORS
-  mode: 'cors'  // Explicitly request CORS mode
+  withCredentials: false
 };
 
 console.log('Current environment:', process.env.NODE_ENV);
