@@ -12,13 +12,24 @@ const PORT = process.env.PORT || 8080;
 let tasks = [];
 let users = [];
 
-// Basic middleware
+// Enhanced CORS configuration
 app.use(cors({
-  origin: ['https://ozysx03.github.io', 'http://localhost:3000'],
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  credentials: true
+  origin: '*',  // Allow all origins
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true,
+  preflightContinue: false,
+  optionsSuccessStatus: 204
 }));
+
+// Basic middleware
 app.use(bodyParser.json());
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ message: 'Something went wrong!' });
+});
 
 // Logging middleware
 app.use((req, res, next) => {
