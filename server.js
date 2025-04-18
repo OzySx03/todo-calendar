@@ -12,19 +12,8 @@ const PORT = process.env.PORT || 8080;
 let tasks = [];
 let users = [];
 
-// CORS configuration
-app.use((req, res, next) => {
-  res.setHeader('Access-Control-Allow-Origin', 'https://ozysx03.github.io');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
-  
-  // Handle preflight
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
-  next();
-});
+// Simple CORS configuration
+app.use(cors());
 
 // Basic middleware
 app.use(bodyParser.json());
