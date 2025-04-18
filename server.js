@@ -12,47 +12,36 @@ const PORT = process.env.PORT || 8080;
 let tasks = [];
 let users = [];
 
-// CORS configuration based on environment
-const allowedOrigins = [
-  'https://ozysx03.github.io',
-  'http://localhost:3000',
-  'http://localhost:8080',
-  'http://127.0.0.1:3000'
-];
-
-const corsOptions = {
-  origin: function(origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) {
-      return callback(null, true);
-    }
-
-    if (allowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV !== 'production') {
-      callback(null, true);
-    } else {
-      console.log('Origin blocked:', origin);
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
+// Set up CORS middleware first, before any routes
+app.use(cors({
+  origin: '*',  // Allow all origins
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true,
+  allowedHeaders: ['Content-Type', 'Authorization', 'Origin', 'Accept'],
+  exposedHeaders: ['Content-Length', 'X-Requested-With'],
+  credentials: false,  // Set to false when using '*' for origin
+  preflightContinue: false,
   optionsSuccessStatus: 204
-};
+}));
 
-app.use(cors(corsOptions));
-
-// Handle preflight requests
-app.options('*', cors(corsOptions));
+// Enable pre-flight requests for all routes
+app.options('*', cors());
 
 // Basic middleware
 app.use(bodyParser.json());
+
+// Add headers middleware
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  next();
+});
 
 // Enhanced logging middleware
 app.use((req, res, next) => {
   console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
   console.log('Origin:', req.headers.origin);
-  console.log('Environment:', process.env.NODE_ENV || 'development');
+  console.log('Headers:', req.headers);
   next();
 });
 

@@ -13,11 +13,13 @@ export const API_URL = getApiUrl();
 export const API_CONFIG = {
   headers: {
     'Content-Type': 'application/json',
-    'Accept': 'application/json'
+    'Accept': 'application/json',
+    'Origin': window.location.origin
   },
-  withCredentials: false
+  withCredentials: false,  // Must be false when using '*' for CORS
+  mode: 'cors'  // Explicitly request CORS mode
 };
 
 console.log('Current environment:', process.env.NODE_ENV);
 console.log('Using API URL:', API_URL);
-console.log('Hostname:', window.location.hostname); 
+console.log('Origin:', window.location.origin); 
