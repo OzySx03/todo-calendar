@@ -3,11 +3,16 @@
   "version": "1.0.0",
   "description": "A web-based ToDoList application with calendar integration",
   "main": "server.js",
+  "engines": {
+    "node": ">=14.0.0",
+    "npm": ">=6.0.0"
+  },
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",
     "client": "cd client && npm start",
-    "dev:full": "concurrently \"npm run dev\" \"npm run client\""
+    "dev:full": "concurrently \"npm run dev\" \"npm run client\"",
+    "postinstall": "npm ci"
   },
   "dependencies": {
     "bcryptjs": "^3.0.2",
