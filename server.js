@@ -12,12 +12,32 @@ const PORT = process.env.PORT || 8080;
 let tasks = [];
 let users = [];
 
-// Development-friendly CORS configuration
+// CORS configuration based on environment
+const allowedOrigins = [
+  'https://ozysx03.github.io',
+  'http://localhost:3000',
+  'http://localhost:8080',
+  'http://127.0.0.1:3000'
+];
+
 const corsOptions = {
-  origin: true, // Allow all origins in development
-  credentials: true,
+  origin: function(origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) {
+      return callback(null, true);
+    }
+
+    if (allowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV !== 'production') {
+      callback(null, true);
+    } else {
+      console.log('Origin blocked:', origin);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true,
+  optionsSuccessStatus: 204
 };
 
 app.use(cors(corsOptions));
@@ -28,17 +48,18 @@ app.options('*', cors(corsOptions));
 // Basic middleware
 app.use(bodyParser.json());
 
+// Enhanced logging middleware
+app.use((req, res, next) => {
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
+  console.log('Origin:', req.headers.origin);
+  console.log('Environment:', process.env.NODE_ENV || 'development');
+  next();
+});
+
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error('Error:', err.stack);
   res.status(500).json({ message: 'Something went wrong!' });
-});
-
-// Logging middleware
-app.use((req, res, next) => {
-  console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
-  console.log('Origin:', req.headers.origin);
-  next();
 });
 
 // Root endpoint
