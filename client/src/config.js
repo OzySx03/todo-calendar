@@ -13,9 +13,10 @@ export const API_URL = getApiUrl();
 export const API_CONFIG = {
   headers: {
     'Content-Type': 'application/json',
-    'Accept': 'application/json'
+    'Accept': 'application/json',
+    'Origin': 'https://ozysx03.github.io'
   },
-  withCredentials: false
+  withCredentials: true  // Enable credentials for CORS
 };
 
 console.log('Current environment:', process.env.NODE_ENV);

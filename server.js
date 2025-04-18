@@ -12,32 +12,24 @@ const PORT = process.env.PORT || 8080;
 let tasks = [];
 let users = [];
 
-// Set up CORS middleware first, before any routes
-app.use(cors({
-  origin: '*',  // Allow all origins
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Origin', 'Accept'],
-  exposedHeaders: ['Content-Length', 'X-Requested-With'],
-  credentials: false,  // Set to false when using '*' for origin
-  preflightContinue: false,
-  optionsSuccessStatus: 204
-}));
-
-// Enable pre-flight requests for all routes
-app.options('*', cors());
+// CORS configuration
+app.use((req, res, next) => {
+  res.setHeader('Access-Control-Allow-Origin', 'https://ozysx03.github.io');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  
+  // Handle preflight
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+  next();
+});
 
 // Basic middleware
 app.use(bodyParser.json());
 
-// Add headers middleware
-app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
-  next();
-});
-
-// Enhanced logging middleware
+// Logging middleware
 app.use((req, res, next) => {
   console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
   console.log('Origin:', req.headers.origin);
@@ -65,8 +57,7 @@ app.get('/health', (req, res) => {
   res.json({ 
     status: 'ok',
     timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || 'development',
-    memory: process.memoryUsage()
+    environment: process.env.NODE_ENV || 'development'
   });
 });
 
