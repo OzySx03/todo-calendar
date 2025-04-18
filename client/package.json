@@ -2,6 +2,7 @@
   "name": "todo-calendar-client",
   "version": "0.1.0",
   "private": true,
+  "proxy": "http://localhost:8080",
   "homepage": "https://OzySx03.github.io/todo-calendar",
   "dependencies": {
     "@emotion/react": "^11.11.3",

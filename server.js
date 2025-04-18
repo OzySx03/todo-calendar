@@ -12,32 +12,18 @@ const PORT = process.env.PORT || 8080;
 let tasks = [];
 let users = [];
 
-// Enhanced CORS configuration with specific origins
-const allowedOrigins = [
-  'https://ozysx03.github.io',
-  'http://localhost:3000',
-  'http://localhost:8080'
-];
-
-// CORS configuration
-app.use(cors({
-  origin: function(origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.indexOf(origin) === -1) {
-      console.log('Origin not allowed:', origin);
-      return callback(null, true); // Allow all origins in production
-    }
-    return callback(null, true);
-  },
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+// Development-friendly CORS configuration
+const corsOptions = {
+  origin: true, // Allow all origins in development
   credentials: true,
-  optionsSuccessStatus: 204
-}));
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+};
 
-// Add CORS headers for preflight requests
-app.options('*', cors());
+app.use(cors(corsOptions));
+
+// Handle preflight requests
+app.options('*', cors(corsOptions));
 
 // Basic middleware
 app.use(bodyParser.json());
@@ -48,11 +34,10 @@ app.use((err, req, res, next) => {
   res.status(500).json({ message: 'Something went wrong!' });
 });
 
-// Logging middleware with more details
+// Logging middleware
 app.use((req, res, next) => {
   console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
   console.log('Origin:', req.headers.origin);
-  console.log('Headers:', JSON.stringify(req.headers, null, 2));
   next();
 });
 
