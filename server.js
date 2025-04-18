@@ -58,7 +58,11 @@ app.use((req, res, next) => {
 
 // Root endpoint
 app.get('/', (req, res) => {
-  res.json({ message: 'Todo Calendar Server' });
+  res.json({ 
+    message: 'Todo Calendar Server',
+    version: process.env.npm_package_version,
+    nodeVersion: process.version
+  });
 });
 
 // Health check endpoint
@@ -66,7 +70,8 @@ app.get('/health', (req, res) => {
   res.json({ 
     status: 'ok',
     timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || 'development'
+    environment: process.env.NODE_ENV || 'development',
+    memory: process.memoryUsage()
   });
 });
 
