@@ -12,15 +12,30 @@ const PORT = process.env.PORT || 8080;
 let tasks = [];
 let users = [];
 
-// Enhanced CORS configuration
+// Enhanced CORS configuration with specific origins
+const allowedOrigins = [
+  'https://ozysx03.github.io',
+  'http://localhost:3000',
+  'http://localhost:8080'
+];
+
 app.use(cors({
-  origin: '*',  // Allow all origins
+  origin: function(origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.indexOf(origin) === -1) {
+      return callback(null, false);
+    }
+    return callback(null, true);
+  },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true,
-  preflightContinue: false,
   optionsSuccessStatus: 204
 }));
+
+// Add CORS headers for preflight requests
+app.options('*', cors());
 
 // Basic middleware
 app.use(bodyParser.json());
@@ -31,9 +46,11 @@ app.use((err, req, res, next) => {
   res.status(500).json({ message: 'Something went wrong!' });
 });
 
-// Logging middleware
+// Logging middleware with more details
 app.use((req, res, next) => {
   console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
+  console.log('Origin:', req.headers.origin);
+  console.log('Headers:', JSON.stringify(req.headers, null, 2));
   next();
 });
 
